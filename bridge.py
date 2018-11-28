@@ -11,9 +11,10 @@ class TrussNode(object):
         return "TrussNode({}, {}, {})".format(self.x, self.y, self.anchor)
 
 class TrussBeam(object):
-    def __init__(self, node1, node2):
+    def __init__(self, node1, node2, weight):
         self.node1 = node1
         self.node2 = node2
+        self.weight = weight
         self.tension = 0
 
         node1.beams.add(self)
@@ -25,4 +26,4 @@ class TrussBeam(object):
         else:
             other_node = self.node1
         
-        return atan2(other_node.x - node.x, other_node.y - node.y)
+        return atan2(other_node.y - node.y, other_node.x - node.x)

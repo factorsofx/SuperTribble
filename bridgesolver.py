@@ -6,6 +6,7 @@ from bridge import TrussBeam, TrussNode
 from eqsys import LinEqSys, LinRelation
 
 from math import cos, sin
+from random import random
 
 # load bridge data
 
@@ -18,42 +19,40 @@ for index, json_node in enumerate(bridge_json['nodes']):
 
 beams = []
 for index, json_beam in enumerate(bridge_json['beams']):
-    beams.append(TrussBeam(nodes[json_beam[0] - 1], nodes[json_beam[1] - 1]))
+    beams.append(TrussBeam(nodes[json_beam[0] - 1], nodes[json_beam[1] - 1], 1))
 
 # generate system of equations for bridge
-eqs = []
-
-# for each node, generate an equation for x and y based on the angle of each beam connected
-# equation structure: [Beam1, Beam2, Beam3, ..., Load1, Load2, Load3, ..., Anchor1, Anchor2, Anchor3, ...]
-# Load forces and anchor forces are only vertical (for now)
-columns = beams # + loads + anchors
+sys = LinEqSys()
 
 for node in nodes:
-    # generate sum of forces equations for x and y for the node
-    x_eq = []
-    y_eq = []
-    for beam in beams:
-        if beam in node.beams:
-            angle = beam.get_force_angle_to_node(node)
-            x_eq.append(cos(angle))
-            y_eq.append(sin(angle))
-        else:
-            x_eq.append(0)
-            y_eq.append(0)
-    eqs.append(x_eq)
-    eqs.append(y_eq)
+    # generate sum of forces relations for x and y for the node
+    x_relation = {}
+    y_relation = {}
+    load_relation = {}
+    load_obj = "node load {}".format(random())
+    load_magnitude = 0
 
-for eq in eqs:
-    print(eq)
+    for beam in node.beams:
+        angle = beam.get_force_angle_to_node(node)
+        x_relation[beam] = cos(angle)
+        y_relation[beam] = sin(angle)
+        load_magnitude += beam.weight / 2
 
-# generate a matrix from the list of equations and solve
+    if node.anchor:
+        anchor_obj = "anchor {}".format(random())
+        y_relation[anchor_obj] = 1
 
-mat = np.array(eqs)
+    y_relation[load_obj] = -1
+    load_relation[load_obj] = 1
+    sys.add_relation(LinRelation(load_relation, load_magnitude))
 
-print(mat.shape)
+    sys.add_relation(LinRelation(x_relation, 0))
+    sys.add_relation(LinRelation(y_relation, 0))
 
-result = np.linalg.lstsq(mat, np.array([0] * mat.shape[0]), rcond=None)[0]
-print(result)
+solution = sys.solve()
+print(solution)
+for beam in beams:
+    beam.tension = solution[beam]
 
 # get the tension in each beam from the equation and use it as the color when generating a diagram
 
@@ -63,7 +62,11 @@ for beam in beams:
     start = (beam.node1.x * 10, -beam.node1.y * 10)
     end   = (beam.node2.x * 10, -beam.node2.y * 10)
 
-    drawing.add(drawing.line(start=start, end=end, stroke='green'))
+    r = 128 - beam.tension * 2
+    g = 128 - abs(beam.tension) * 2
+    b = 128 + beam.tension * 2
+
+    drawing.add(drawing.line(start=start, end=end, stroke=svgwrite.rgb(r, g, b)))
 
 for node in nodes:
     drawing.add(drawing.circle((node.x * 10, -node.y * 10), r=2, fill='red' if node.anchor else 'black'))
