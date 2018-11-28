@@ -2,7 +2,9 @@ import numpy as np
 import json
 import svgwrite
 
-from bridge import *
+from bridge import TrussBeam, TrussNode
+from eqsys import LinEqSys, LinRelation
+
 from math import cos, sin
 
 # load bridge data
