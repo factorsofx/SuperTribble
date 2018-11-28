@@ -10,7 +10,7 @@ from random import random
 
 # load bridge data
 
-with open('bridges/180_bridge.json') as bridge_file:
+with open('bridges/simple_bridge.json') as bridge_file:
     bridge_json = json.load(bridge_file)
 
 nodes = []
