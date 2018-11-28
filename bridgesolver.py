@@ -10,7 +10,7 @@ from random import random
 
 # load bridge data
 
-with open('bridges/simple_bridge.json') as bridge_file:
+with open('bridges/180_bridge.json') as bridge_file:
     bridge_json = json.load(bridge_file)
 
 nodes = []
@@ -50,13 +50,13 @@ for node in nodes:
     sys.add_relation(LinRelation(y_relation, 0))
 
 solution = sys.solve()
-print(solution)
-for beam in beams:
+for index, beam in enumerate(beams):
     beam.tension = solution[beam]
+    print("Beam {} tension: {:.2f}".format(index + 1, beam.tension))
 
 # get the tension in each beam from the equation and use it as the color when generating a diagram
 
-drawing = svgwrite.Drawing(filename='bridge.svg', profile='tiny', viewBox="-10 -110 120 120")
+drawing = svgwrite.Drawing(filename='bridge.svg', profile='full', viewBox="-10 -110 120 120")
 
 for beam in beams:
     start = (beam.node1.x * 10, -beam.node1.y * 10)
@@ -70,6 +70,5 @@ for beam in beams:
 
 for node in nodes:
     drawing.add(drawing.circle((node.x * 10, -node.y * 10), r=2, fill='red' if node.anchor else 'black'))
-
 
 drawing.save()
